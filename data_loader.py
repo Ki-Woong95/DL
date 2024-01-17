@@ -14,7 +14,7 @@ class MnistDataset(Dataset):
         
     
     def __len__(self):
-        return len(self.data.size(0))
+        return self.data.size(0)
     
     def __getitem__(self, index):
         x = self.data[index]
@@ -48,7 +48,7 @@ def get_loaders(config):
     x, y = load_mnist(is_train = True, flatten = False)
     
     train_cnt = int(x.size(0) * config.train_ratio)
-    valid_cnt = x.size(0) = train_cnt
+    valid_cnt = x.size(0) - train_cnt
     
     #Shuffle dataset to split into train/valid set.
     indices = torch.randperm(x.size(0))

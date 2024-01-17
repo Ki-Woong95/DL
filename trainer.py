@@ -22,6 +22,7 @@ VERBOSE_BATCH_WISE = 2
 class MyEngine(Engine):
 
     def __init__(self, func, model, crit, optimizer, config):
+        #func: process function for training and validation process (loss calculation + backpropagation + feed forward)
         # Ignite Engine does not have objects in below lines.
         # Thus, we assign class variables to access these object, during the procedure.
         self.model = model
@@ -37,30 +38,37 @@ class MyEngine(Engine):
         self.device = next(model.parameters()).device
 
     @staticmethod
-    def train(engine, mini_batch):
+    def train(engine, mini_batch): #mini_batch = tuple
         # You have to reset the gradients of all model parameters
         # before to take another step in gradient descent.
         engine.model.train() # Because we assign model as class variable, we can easily access to it.
         engine.optimizer.zero_grad()
 
         x, y = mini_batch
+        
+        # |x| = (bs, 784)
+        # |y| = (bs, 10)
         x, y = x.to(engine.device), y.to(engine.device)
 
         # Take feed-forward
         y_hat = engine.model(x)
-
+        #|y_hat| = (bs, 10)
         loss = engine.crit(y_hat, y)
         loss.backward()
 
-        # Calculate accuracy only if 'y' is LongTensor,
+        # Calculate accuracy only if 'y' is LongTensor --> classification/ FloatTensor --> regression task,
         # which means that 'y' is one-hot representation.
         if isinstance(y, torch.LongTensor) or isinstance(y, torch.cuda.LongTensor):
             accuracy = (torch.argmax(y_hat, dim=-1) == y).sum() / float(y.size(0))
         else:
             accuracy = 0
-
+            
+            
+        #p_norm: parameter's L2norm
+        #g_norm: parameter gradient's g_norm
         p_norm = float(get_parameter_norm(engine.model.parameters()))
         g_norm = float(get_grad_norm(engine.model.parameters()))
+        
 
         # Take a step of gradient descent.
         engine.optimizer.step()
